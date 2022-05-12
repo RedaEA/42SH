@@ -1,0 +1,5 @@
+subdir('ast')
+subdir('eval')
+subdir('lexer')
+subdir('parser')
+subdir('execution')
