@@ -1,1 +1,0 @@
-all_sources += files('execution.c',)

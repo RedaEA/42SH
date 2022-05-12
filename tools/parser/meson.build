@@ -1,1 +1,0 @@
-all_sources += files('bnf.c',)

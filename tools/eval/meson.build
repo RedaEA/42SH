@@ -1,1 +1,0 @@
-all_sources += files('ast_print.c','token_printer.c')
