@@ -1,0 +1,452 @@
+#!/bin/sh
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+ORANGE='\033[0;33m'
+
+
+OK="${LIGHT_GREENBG}OK${NOBG}"
+KO="${LIGHT_REDBG}KO${NOBG}"
+VAL=0
+HITS=0
+ERRORS=0
+gerr=0
+berr=0
+
+show()
+{
+    printf "Testing with args: [${ORANGE}$@${NC}]\n"  
+}
+
+check()
+{
+    gerr=0
+    berr=0
+    VAL=$((VAL+1));
+    #printf "Testing with args: [${ORANGE}$@${NC}]\n"
+    #dash -c "$@" > ref
+    #bash_return_code=$?
+    #./42sh -c "$@" > student
+    #actual_return_code=$?
+
+    #cat $@
+    #bash_return_code=$?
+    #../builddir/42sh -c "echo 1a 1>& 2" > student
+    #actual_return_code=$?
+
+    printf "Ref output :\n"
+    cat ref
+    
+    printf "Student output :\n"
+    cat student
+
+    echo "$actual_return_code"
+    echo $bash_return_code
+
+    if [ $actual_return_code -eq $bash_return_code ]
+    then
+        gerr=$((gerr+1));
+    else
+        berr=$((berr+1))
+    fi;
+    [ $bash_return_code -eq $actual_return_code ] && printf "RETURN_CODE: ${GREEN}[CLEAR]${NC}\n" || printf "RETURN_CODE:${RED}[BAD]${NC}
+expected: $bash_return_code got: $actual_return_code\n"
+
+    diff -u ref student
+    output_diff=$?
+    if [ $output_diff -eq 0 ]
+    then
+        if [ $berr -eq 0 ]
+        then
+            HITS=$((HITS+1));
+        else
+            ERRORS=$((ERRORS+1))
+        fi;
+    else
+        ERRORS=$((ERRORS+1))
+    fi;
+    [ $output_diff -eq 0 ] && printf "OUTPUT: ${GREEN}[CLEAR]${NC}\n" || printf "OUTPUT: ${RED}[BAD]${NC}\n"
+}
+
+value=42
+echo ${value} > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \${value}" > student
+actual_return_code=$?
+show "echo \${value}"
+check
+
+#check "echo -en Hello"
+
+#check "echo -en 'Hello\n'"
+#check "echo -nnnnn "Hello\n""
+#check "echo -nneeee "Hello\n""
+#check "echo -nneeeennn "Hello\n""
+#check "echo -eeeennn -n -e 'Hello\n'"
+
+#dash -c "echo -e 'this is \n'"
+#dash -c "echo -e 'this is \t my test \t final \n'"
+#dash -c "echo -e 'tr\tuc'"
+#dash -c "echo -n -e -n -e 'truc\\\\\\\\'"
+#dash -c "echo -n inspiration"
+#dash -c "echo -n -n -n troubadour"
+
+echo 1a 1>& 2 > ref
+bash_return_code=$?
+../builddir/42sh -c "echo 1a 1>& 2" > student
+actual_return_code=$?
+show "echo 1a 1>& 2"
+check
+
+echo -e 'this is \n' > ref
+bash_return_code=$?
+../builddir/42sh -c "echo -e this is \n" > student
+actual_return_code=$?
+show "echo -e 'this is \n'"
+check
+
+
+echo -e 'this is \t my test \t final \n' > ref
+bash_return_code=$?
+../builddir/42sh -c "echo -e this is \t my test \t final \n" > student
+actual_return_code=$?
+show "echo -e 'this is \t my test \t final \n'"
+check 
+
+
+echo -en 'Hello\n' > ref
+bash_return_code=$?
+../builddir/42sh -c "echo -en Hello\n" > student
+actual_return_code=$?
+show "echo -en 'Hello\n'"
+check
+
+echo -en "Hello\n" > ref
+bash_return_code=$?
+../builddir/42sh -c "echo -en Hello\n" > student
+actual_return_code=$?
+show "echo -en \"Hello\n\""
+check
+
+test1=var
+echo $test1 > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$test1" > student
+actual_return_code=$?
+show "echo \$test1"
+check
+
+test2=pro
+test3=ject
+
+echo $test2$test3 > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$test2\$test3 " > student
+actual_return_code=$?
+show "echo \$test2\$test3"
+check
+
+
+test4=ec
+test5=ho
+
+$test4$test5 -e 'Testing concatenate vars' > ref
+bash_return_code=$?
+../builddir/42sh -c "\$test4\$test5 -e 'Testing concatenate vars'" > student
+actual_return_code=$?
+show "\$test4\$test5 -e 'Testing concatenate vars'"
+check
+
+
+variant1=delta
+variant2=omicron
+variant3=zeta
+variant4=fist
+
+echo "$variant1 $variant2 $variant3 $variant4" > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \"\$variant1 \$variant2 \$variant3 \$variant4\"" > student
+actual_return_code=$?
+show "echo "\$variant1 \$variant2 \$variant3 \$variant4""
+check
+
+echo "My variant : $variant1 $variant2 $variant3 $variant4" > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \"My variant : \$variant1 \$variant2 \$variant3 \$variant4\"" > student
+actual_return_code=$?
+show "echo \"My variant : \$variant1 \$variant2 \$variant3 \$variant4\""
+check
+
+echo "$variant1$variant2 $variant3$variant4" > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$variant1\$variant2 \$variant3\$variant4" > student
+actual_return_code=$?
+show "echo \"$variant1$variant2 $variant3$variant4\""
+check
+
+variant3=$variant1
+variant4=$variant1$variant2
+
+echo $variant3 > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$variant3" > student
+actual_return_code=$?
+show "echo \$variant3"
+check
+
+echo "$variant4" > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$variant4" > student
+actual_return_code=$?
+show "echo \$variant4"
+check
+
+var1=job
+if echo $var1; then echo polo; else var1=nope; echo "job has become $var1" ;fi > ref
+bash_return_code=$?
+../builddir/42sh -c "if echo \$var1; then echo polo; else var1=nope; echo \"job has become \$var1\" ;fi" > student
+actual_return_code=$?
+show "if echo \$var1; then echo polo; else var1=nope; echo \"job has become \$var1\" ;fi"
+check
+
+if echi $var1 2> /dev/null ; then echo polo; else var1=nope; echo "job has become $var1" ;fi > ref
+bash_return_code=$?
+../builddir/42sh -c "if echi \$var1 2> /dev/null ; then echo polo; else var1=nope; echo \"job has become \$var1\" ;fi" > student
+actual_return_code=$?
+show "if echi \$var1 2> /dev/null ; then echo polo; else var1=nope; echo \"job has become \$var1\" ;fi"
+check
+
+
+tab1=ec
+tab2=ho
+
+if $tab1$tab2 dude 2>/dev/null; then echo -e "Var has been changed \n"; tab2=nope;fi; echo "success" > ref
+bash_return_code=$?
+../builddir/42sh -c "if \$tab1\$tab2 dude 2>/dev/null; then echo -e \"Var has been changed \n\"; tab2=nope;fi; echo \"success\"" > student
+actual_return_code=$?
+show "if \$tab1\$tab2 dude 2>/dev/null; then echo -e \"Var has been changed \n\"; tab2=nope;fi; echo \"success\""
+check
+
+var2=ec
+var3=ho
+
+if $var2$var2 dude 2>/dev/null; then echo -e "Var has been changed \n"; var2=nope;fi; echo "success"> ref
+bash_return_code=$?
+../builddir/42sh -c "if \$var2\$var2 dude 2>/dev/null; then echo -e \"Var has been changed \n\"; var2=nope;fi; echo \"success\"" > student
+actual_return_code=$?
+show "if \$var2\$var2 dude 2>/dev/null; then echo -e \"Var has been changed \n\"; var2=nope;fi; echo \"success\"; fi"
+check
+
+
+#cas=c
+#cas2=d
+#
+#$cas$cas2 ..; cat exec > tests/ref; 
+#bash_return_code=$?
+#../builddir/42sh -c "\$cas\$cas2 ..; cat exec;" > student
+#actual_return_code=$?
+#show "echo \$variant3"
+#check 
+
+
+printf "\n"
+printf "${CYAN}########## TESTING_FOR_LOOPS #############${NC}\n"
+printf "\n"
+
+for i in 1 2 3 4 5;do echo $i;done > ref
+bash_return_code=$?
+../builddir/42sh -c "for i in 1 2 3 4 5;do echo $i;done" > student
+actual_return_code=$?
+show "for i in 1 2 3 4 5;do echo \$i;done "
+check
+
+for day in Mon, Tue, Wed, Thu, Fri; do echo "Weekday : $day";done > ref
+bash_return_code=$?
+../builddir/42sh -c "for day in Mon, Tue, Wed, Thu, Fri; do echo "Weekday : $day";done" > student
+actual_return_code=$?
+show "for day in Mon, Tue, Wed, Thu, Fri; do echo \"Weekday : \$day\";done"
+check
+
+for item in * ;do echo "$item";done > ref
+bash_return_code=$?
+../builddir/42sh -c "for item in * ;do echo "$item";done" > student
+actual_return_code=$?
+show "for item in * ;do echo \"\$item\";done"
+check
+
+for day in Mon Tue Wed Thu Fri;do echo "Weekday : $day" ;if echo dad; then break; fi;done > ref
+bash_return_code=$?
+../builddir/42sh -c "for day in Mon Tue Wed Thu Fri;do echo "Weekday : $day" ;if echo dad; then break; fi;done" > student
+actual_return_code=$?
+show "for day in Mon Tue Wed Thu Fri;do echo \"Weekday : \$day\" ;if echo dad; then break; fi;done"
+check
+
+for day in Mon Tue Wed Thu Fri;do echo "DAY : $day" ;if echi then 2>/dev/null ; then break;else echo "skip succeed"; fi;done > ref
+bash_return_code=$?
+../builddir/42sh -c "for day in Mon Tue Wed Thu Fri;do echo "DAY : $day" ;if echi then 2>/dev/null ; then break;else echo "skip succeed"; fi;done" > student
+actual_return_code=$?
+show "for day in Mon Tue Wed Thu Fri;do echo \"DAY : \$day\" ;if echi then 2>/dev/null ; then break;else echo \"skip succeed\"; fi;done"
+check
+
+for day in Mon Tue Wed Thu Fri Sat Sun; do echo -e "Day : $day \n"; continue; echo " weekday"; done > ref
+bash_return_code=$?
+../builddir/42sh -c "for day in Mon Tue Wed Thu Fri Sat Sun; do echo -e "Day : $day \n"; continue; echo " weekday"; done" > student
+actual_return_code=$?
+show "for day in Mon Tue Wed Thu Fri Sat Sun; do echo -e \"Day : \$day \n\"; continue; echo  weekday; done"
+check
+
+for day in "Mon Tue Wed Thu Fri"; do echo "Weekday : $day \t";done; echo -e "\n"; > ref
+bash_return_code=$?
+../builddir/42sh -c "for day in "Mon Tue Wed Thu Fri"; do echo "Weekday : $day \t";done; echo -e \n;" > student
+actual_return_code=$?
+show "for day in \"Mon Tue Wed Thu Fri\"; do echo \"Weekday : \$day \t\";done; echo -e \"\n\";"
+check
+
+weekdays="Mon Tue Wed Thu Fri"
+for day in $weekdays;do echo -e "Days of the weeks : $day\n";done > ref
+bash_return_code=$?
+../builddir/42sh -c "for day in $weekdays;do echo -e "Days of the weeks : $day\n";done" > student
+actual_return_code=$?
+show "for day in \$weekdays;do echo -e \"Days of the weeks : \$day\n\";done"
+check
+
+for day in $weekdays;do echo -e "Days of the weeks : $day\n";done > ref
+bash_return_code=$?
+../builddir/42sh -c "for day in $weekdays;do echo -e "Days of the weeks : $day\n";done" > student
+actual_return_code=$?
+show "for day in \$weekdays;do echo -e \"Days of the weeks : \$day\n\";done"
+check
+
+for day in $weekdays;do echo -e "Days of the weeks : $day\n"; done > ref
+bash_return_code=$?
+../builddir/42sh -c "for day in $weekdays;do echo -e "Days of the weeks : $day\n"; done" > student
+actual_return_code=$?
+show "for day in \$weekdays;do echo -e \"Days of the weeks : $day\n\"; done"
+check
+
+printf "\n"
+printf "${CYAN}########## SPECIAL VARIABLES #############${NC}\n"
+printf "\n"
+
+echo $@ > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$@" > student
+actual_return_code=$?
+show "echo \$@"
+check
+
+echo $? > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$?" > student
+actual_return_code=$?
+show "echo \$?"
+check
+
+echo $* > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$*" > student
+actual_return_code=$?
+show "echo \$*"
+check
+
+echo $$ > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$$" > student
+actual_return_code=$?
+show "echo \$$"
+check
+
+echo $# > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$#" > student
+actual_return_code=$?
+show "echo \$#"
+check
+
+echo $IFS > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$IFS" > student
+actual_return_code=$?
+show "echo \$IFS"
+check
+
+echo $UID > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$UID" > student
+actual_return_code=$?
+show "echo \$UID"
+check
+
+vase=$RANDOM
+echo $vase  > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$vase" > student
+actual_return_code=$?
+show "echo \$vase"
+check
+
+echo $OLDPWD > ref
+bash_return_code=$?
+../builddir/42sh -c "echo \$OLDPWD" > student
+actual_return_code=$?
+show "echo \$OLDPWD"
+check
+
+#printf "\n"
+#printf "${CYAN}########## TESTING_FUNCTION_HARD #############${NC}\n"
+#printf "\n"
+#
+#fresh(){
+#   # t stores $1 argument passed to fresh()
+#   t=$1
+#   echo "fresh(): \$0 is $0"
+#   echo "fresh(): \$1 is $1"
+#   echo "fresh(): \$t is $t"
+#   echo "fresh(): total args passed to me $#"
+#   echo "fresh(): all args (\$@) passed to me -\"$@\""
+#   echo "fresh(): all args (\$*) passed to me -\"$*\""
+#}
+#
+#fresh Tomato > ref
+#bash_return_code=$?
+#../builddir/42sh -c "fresh(){
+#   # t stores \$1 argument passed to fresh()
+#   t=\$1
+#   echo \"fresh(): \$0 is \$0\"
+#   echo \"fresh(): \$1 is \$1\"
+#   echo \"fresh(): \$t is \$t\"
+#   echo \"fresh(): total args passed to me \$#\"
+#   echo \"fresh(): all args (\$@) passed to me -\"\$@\"\"
+#   echo \"fresh(): all args (\$*) passed to me -\"\$*\"\"
+#}; fresh tomato" > student
+#actual_return_code=$?
+#show "Testing function one arg"
+#check
+#
+#fresh Tomato Onion Paneer > on
+#bash_return_code=$?
+#../builddir/42sh -c "fresh(){
+#   # t stores \$1 argument passed to fresh()
+#   t=\$1
+#   echo \"fresh(): \$0 is \$0\"
+#   echo \"fresh(): \$1 is \$1\"
+#   echo \"fresh(): \$t is \$t\"
+#   echo \"fresh(): total args passed to me \$#\"
+#   echo \"fresh(): all args (\$@) passed to me -\"\$@\"\"
+#   echo \"fresh(): all args (\$*) passed to me -\"\$*\"\"
+#}; fresh Tomato Onion Paneer" > student
+#actual_return_code=$?
+#show "Testing function two args"
+#check
+
+printf "\n"
+printf "${CYAN}################# RECAPITULATIF ##################${NC}\n"
+printf "\n"
+
+echo -e "TOTAL : $VAL , PASSED TESTS : ${GREEN} $HITS ${NC}, FAILED : ${RED} $ERRORS ${NC}\n"
+
+rm ref
+rm cmd.txt
+rm student

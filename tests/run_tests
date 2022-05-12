@@ -1,0 +1,586 @@
+#!/bin/sh
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+ORANGE='\033[0;33m'
+
+
+OK="${LIGHT_GREENBG}OK${NOBG}"
+KO="${LIGHT_REDBG}KO${NOBG}"
+VAL=0
+HITS=0
+ERRORS=0
+gerr=0
+berr=0
+
+#New variables to test echo with -e options
+eVAL=0
+eHITS=0
+eERRORS=0
+egerr=0
+eberr=0
+
+cd ../builddir
+
+check()
+{
+    gerr=0
+    berr=0
+    VAL=$((VAL+1));
+    printf "Testing with args: [${ORANGE}$@${NC}]\n"
+    dash -c "$@" > ref
+    bash_return_code=$?
+    ./42sh -c "$@" > student
+    actual_return_code=$?
+
+    if [ $actual_return_code -eq $bash_return_code ]
+    then
+        gerr=$((gerr+1));
+    else
+        berr=$((berr+1))
+    fi;
+    [ $bash_return_code -eq $actual_return_code ] && printf "RETURN_CODE: ${GREEN}[CLEAR]${NC}\n expected: $bash_return_code got: $actual_return_code\n" || printf "RETURN_CODE:${RED}[BAD]${NC}
+expected: $bash_return_code got: $actual_return_code\n"
+
+    diff -u ref student
+    output_diff=$?
+    if [ $output_diff -eq 0 ]
+    then
+        if [ $berr -eq 0 ]
+        then
+            HITS=$((HITS+1));
+        else
+            ERRORS=$((ERRORS+1))
+        fi;
+    else
+        ERRORS=$((ERRORS+1))
+    fi;
+    [ $output_diff -eq 0 ] && printf "OUTPUT: ${GREEN}[CLEAR]${NC}\n" || printf "OUTPUT: ${RED}[BAD]${NC}\n"
+}
+
+e_opt_check()
+{
+    egerr=0
+    eberr=0
+    eVAL=$((eVAL+1));
+    printf "Testing with args: [${ORANGE}$@${NC}]\n"
+    bash -c "$@" > ref
+    bash_return_code=$?
+    ./42sh -c "$@" > student
+    actual_return_code=$?
+
+    if [ $actual_return_code -eq $bash_return_code ]
+    then
+        egerr=$((egerr+1));
+    else
+        eberr=$((eberr+1))
+    fi;
+    [ $bash_return_code -eq $actual_return_code ] && printf "RETURN_CODE: ${GREEN}[CLEAR]${NC}\n expected: $bash_return_code got: $actual_return_code\n" || printf "RETURN_CODE:${RED}[BAD]${NC}
+expected: $bash_return_code got: $actual_return_code\n"
+
+    diff -u ref student
+    output_diff=$?
+    if [ $output_diff -eq 0 ]
+    then
+        if [ $eberr -eq 0 ]
+        then
+            eHITS=$((eHITS+1));
+        else
+            eERRORS=$((eERRORS+1))
+        fi;
+    else
+        eERRORS=$((eERRORS+1))
+    fi;
+    [ $output_diff -eq 0 ] && printf "OUTPUT: ${GREEN}[CLEAR]${NC}\n" || printf "OUTPUT: ${RED}[BAD]${NC}\n"
+}
+
+printf "${CYAN}########## FAILED TESTS PART #############${NC}\n"
+printf "\n"
+
+
+check "exit dzfvez"
+check "exit 4eze"
+check "for a in Mon tue wed; do echo \$a;if echo c ;then break;else echo ok;done"
+check "cd ..;c=ls; ok=dsqdq; echo \$c\$OLDPWD\$ok"
+check "a=ls echo salut"
+check "a=echo; \$a \$a\$c\$c\"\$a\$a\$c\$c\$cdz \$a\""
+check "echo $="
+check "a=echo; \$a salut toi"
+check "a=echo; b=ls; \$a \$b"
+check "a=echo; \$a \$a \$a \$a \$a salut"
+check "              "
+check "val=6156;eur=5452; echo \${val}\${eur}"
+check "val=ec;eur=ho; \${val}\${eur} concatenation"
+
+check "fun (){ echo fist ; val=bracket; echo \$val; echo \$@ ; }; fun "
+check "fun (){ echo fist ; val=bracket; echo \$val; echo \$@ ; }; fun dsfsd fsqdgsdf"
+
+check "fun (){ echo fist ; val=bracket; echo \$val; echo \$@ ; }; fun dsfsd fsqdgsdf"
+check "fun (){ echo first print; val=bracket; echo \$val; echo \$@ && echo \$# && echo \$2;  }; fun arg1 arg2"
+check "fun (){ echo first print; val=bracket; echo \$val; echo \"All args : \$@\" && echo \"Number of args : \$#\" && echo \"Second arg : \$2\";  }; fun arg1 arg2"
+
+
+check "fun (){ echo fist ; val=bracket; echo \$val; echo \$@ ; echo \$#;  }; fun "
+check "fun (){ echo fist ; val=bracket; echo \$val; echo \$@ ; echo \$#;  }; fun dsfsd fsqdgsdf"
+check "fun (){ echo fist ; val=bracket; echo \$val; echo \$@ ; echo \$#;  }; fun dsfsd fsqdgsdf feds egfrsdfg gdfsgdsfg gezrgsdfg gdfsgdsf gdfsgdsfg"
+
+check "fun (){ echo fist ; val=bracket; echo \$val; for i in \$*;do echo \$i; done; }; fun fdsd gsdfgsd"
+check "fun (){ echo fist ; val=bracket; echo \$val; for i in \$*;do echo \$i; done; }; fun fdsd"
+check "fun (){ echo fist ; val=bracket; echo \$val; for i in \$*;do echo \$i; done; }; fun"
+
+check "fun (){ echo fist ; val=bracket; echo \$val; for i in \$@do echo \$i; done; }; fun fdsd gsdfgsd"
+check "fun (){ echo fist ; val=bracket; echo \$val; for i in \$@;do echo \$i; done; }; fun fdsd"
+check "fun (){ echo fist ; val=bracket; echo \$val; for i in \$@;do echo \$i; done; }; fun"
+
+check "echo \${"
+check "ter=val; echo \${ter"
+check "a=evdo; echo \$b \$b salut"
+
+check "val1=1;val2=2; seq \$val1\$val2"
+check "kdfdshgfds echo zeubi; echo zeubi; "
+
+check "for day in Mon, Tue, Wed, Thu, Fri; do echo \"Weekday : \$day\";done"
+check "Weekday=\"Mon Tue Wed Thu Fri\"; for day in Mon Tue Wed Thu Fri;do echo \"Weekday : \$day\" ;if echo dad; then break; fi;done"
+check "for day in Mon Tue Wed Thu Fri;do echo \"DAY : \$day\" ;if echi then 2>/dev/null ; then break;else echo \"skip succeed\"; fi;done"
+check "for day in Mon Tue Wed Thu Fri Sat Sun; do echo \$day; continue; echo  weekday; done"
+check "for day in Mon Tue Wed Thu Fri Sat Sun; do echo \$day; exit; echo  weekday; done"
+check "for day in Mon Tue Wed Thu Fri Sat Sun; do echo \$day; break; echo  weekday; done"
+check "for day in Mon Tue Wed Thu Fri; do echo \"Weekday : \$day \";done;"
+check "for day in 1 2 3 6 45 21 66 ;do echo \"Days of the weeks : \$day\";done"
+
+check "for day in Mon Tue Wed Thu Fri; do echo \"Weekday : \$day\";done;"
+check "for day in Mon Tue Wed Thu Fri; do echo \"Weekday : \$day\"; exit; done;"
+check "for day in Mon Tue Wed Thu Fri; do echo \"Weekday : \$day\"; break; done;"
+check "for day in Mon Tue Wed Thu Fri; do echo \"Weekday : \$day\";continue; done;"
+
+check "echo o >|t >> a >& a 1>2"
+
+e_opt_check "(echo -e \"hello\n\" || echo pipe) || (echo lisa | cat -e) && (echi down 2> /dev/null && ls)"
+e_opt_check "(echo -e \"hello\n\" || echo pipe) || (echo lisa | cat -e) && (echi down 2> /dev/null || ls)"
+e_opt_check "(echo -e \"hello\n\" || echo pipe || echo lisa | cat -e && echi down 2> /dev/null && ls)"
+
+check "Remi's mother; echo dude; echi -e lmsql;"
+check "Remi's mother"
+check "Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
+check "echo Lorem Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Lorem Ipsum is simply dummy text of the printing and Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
+
+e_opt_check "echo -eeeeenneeenenenenennnnnnnnneeeeN yo"
+check "echo -e \"hello\n\" || echo pipe) || echo lisa | cat -e) && (echi down 2> /dev/null && ls)"
+check "(echo -e \"hello\n\" || echo pipe || (echo lisa | cat -e) && (echi down 2> /dev/null && ls"
+check "(echo -e \"hello\n\" || echo pipe || echo lisa | cat -e && echi down 2> /dev/null && ls"
+
+
+printf "\n"
+printf "${CYAN}###################### BREAK_AND_CONTINUE ######################${NC}\n"
+printf "\n"
+
+check "break"
+check "continue"
+check "if echo dad; then break; fi"
+check "if echo dad; then continue; fi"
+
+
+printf "\n"
+printf "${CYAN}###################### ESPERLUETTE ######################${NC}\n"
+printf "\n"
+
+check  "&"
+check " ( & echo afdhsjfhsd)"
+check "echo \"afdhsjfhsd\" & "
+check " ( & echo \"afdhsjfhsd\" & echo listshdef)"
+
+printf "\n"
+printf "${CYAN}###################### UNSET ######################${NC}\n"
+printf "\n"
+
+check "unset"
+check "unset vallala"
+check "vech=Bus;echo \$vech;unset vech;echo \$vech"
+check "a=1; b=2; c=3; d=4; unset abd; unset acd; unset ; unset abcd"
+check "a=1; b=2; c=3; d=4; unset a; unset b; unset c; unset d; echo \$a\$b\$c\$d;"
+check "a=1; b=2; c=3; d=4; unset a; echo \$a\$b; unset b; unset c; echo \$a\$c\$d; unset d; echo \$a\$b\$c\$d;"
+check "a=1; b=2; c=3; d=4; unset abcd; echo \$a\$b\$c\$d;"
+check "f=function; echo \$f; unset f; echo \$f; echo \$f; echo \$f"
+
+printf "\n"
+printf "${CYAN}################### FUNCTION WITH VARIABLES ######################${NC}\n"
+printf "\n"
+
+check "fun (){ echo fist ; val=bracket; echo \$val;  }; fun"
+check "fun (){ echo fist ; val=bracket; echo \$val; echo \$@ ; }; fun "
+check "fun (){ echo fist ; val=bracket; echo \$val; echo \$@ ;}; fun arg1"
+check "fun (){ echo fist ; val=bracket; echo \$val; echo \$@ ;}; fun arg1 arg2 arg3"
+
+check "fun (){echo fist ; val=bracket; echo \$val; echo \$@  ; fun "
+check "fun (){echo fist; val=bracket echo \$val echo \$@ }; fun "
+check "fun ()(echo fist ; val=bracket; echo \$val; echo \$@  ; fun "
+
+printf "\n"
+printf "${CYAN}################### WHILE AND LOOPS ######################${NC}\n"
+printf "\n"
+
+check "a=true;while \$a; do echo \$a salut; echo tutu; a=false;done; echo \$a"
+check "a=true; while \$a; do echo zeb ; echo tutu; a=false; done"
+check "a=true; while \$a; do (echo titi | cat -e);a=false; done"
+check "a=true; while \$a; do (echo titi | cat -e);if echo papa; then echo fifi; else echo loulou; fi; a=false; done"
+
+check "a=false; while \$a; do echo zeb ; echo tutu; a=false;done; echo \"false condition succeed\";  "
+
+check "a=true;while \$a; do echo \$a salut echo tutu; a=false;done; echo \$a"
+check "a=true; while \$a; do echo zeb ; echo tutu; a=false; "
+check "a=true; while \a echo titi | cat -e);a=false  done"
+check "a=true; while a do echo titi | cat -e if echo papa; then echo fifi; else echo loulou; fi; a=false; done"
+
+check "a=true;until \$a; do echo \$a salut; echo tutu; a=false;done; echo \$a"
+check "a=true; until \$a; do echo zeb ; echo tutu; a=false; done"
+check "a=true; until \$a; do (echo titi | cat -e);a=false; done"
+check "a=true; until \$a; do (echo titi | cat -e);if echo papa; then echo fifi; else echo loulou; fi; a=false; done"
+
+check "a=true;until \$a; do echo \$a salut echo tutu; a=false;done; echo \$a"
+check "a=true; until \$; o echo zb; ctu;afalse; "
+check "a=true; until \$a; (echo titi | cat -e);a=falsone"
+check "a=true; until \$a do echo titi | cat -e if echo papa; then echo fi else echo loulou; fi; a=false; done"
+
+printf "${CYAN}########## BUILTINS #############${NC}\n"
+printf "\n"
+printf "${CYAN}########## ECHO #############${NC}\n"
+printf "\n"
+
+
+check "echo '               cdsnbvjsdf  dvfdsbv sdvdfq fgdfg rfdgqfs'"
+
+check "for a in echo; do echo \$a;done"
+check "for a in ls;do \$a;done"
+check "for i in ls echo;do \$i;done; "
+check "for i in salut ok ca marche bien; do echo \$i;done"
+check "a=true;while \$a; do echo \$a salut; echo kdsqd; exit; a=false;done; echo \$a"
+check "a=true;while \$a; do echo \$a salut; echo kdsqd; break; a=false;done; echo \$a"
+check "a=true;while \$a; do echo \$a salut; echo kdsqd; break;done; echo \$a"
+
+check "a=true;while ; do echo $a salut; a=false;done; echo $a"
+check "a=false;until; do echo $a salut; a=true;done; echo $a"
+
+
+check "a=true;while \$a; do echo \$a salut; a=false;done; echo \$a"
+check "a=false;while \$a; do echo \$a salut; a=true;done; echo \$a"
+check "a=true;while \$a; do echo \$a salut; a=false;done;"
+check "a=false;while \$a; do echo \$a salut; a=true;done;"
+
+check "a=true;until \$a; do echo \$a salut; a=false;done; echo \$a"
+check "a=false;until \$a; do echo \$a salut; a=true;done; echo \$a"
+check "a=true;until \$a; do echo \$a salut; a=false;done;"
+check "a=false;until \$a; do echo \$a salut; a=true;done;"
+
+check "a=true; echo \$a"
+check "a=ls; echo salut je veux \$a ou \$a;a=ls;\$a"
+
+check "for a in echo; do \$a echo;done"
+
+check "if echo a;fi; echo \$?"
+check "q"
+check "echo; echo;echo"
+check "a=5; unset a;"
+check "a=1"
+check "echo world"
+check "echo hello; echo world"
+check "echo zeb; echo papa ; echo"
+e_opt_check "echo -e"
+check "echo toto | cat -e"
+check "echo a | cat -e"
+check "echo  -n \"azeazeaze\""
+
+check "cat Loremipsumdolorsitamet,consecteturadipiscingelit.Aliquamconsequatmassasedurnavenenatisbibendum.Praesentavariusenim,necvehiculanulla.Utatlectusaliquam,consecteturmagnased,suscipitipsum.Maurisnecmaurisex.Utsednullasuscipit,ultricieserossed,laciniaurna.Maecenassagittis,metusnonrhoncusplacerat,nisirisusinterdummi,egetviverraurnaeratsedvelit.Utpellentesquenequeex.Nullaullamcorpervelpurusvelsagittis.Vivamusatconsequatsem.Inlaciniasednequequisrhoncus.Classaptenttacitisociosquadlitoratorquentperconubianostra,perinceptoshimenaeos.Nuncfeugiatarcununc,utefficiturauguevehiculased.Morbisodales,urnasitametlaoreetimperdiet,justodiamconsequatmauris,necsuscipitenimtortorvitaesapien.Quisqueexmauris,tempusnecdolorquis,egestasornareerat.Donecvitaeultriceseros.Donecacloremposuere,scelerisqueestid,laoreetligula.Inimperdietjustosedvehiculadignissim.Nuncutligulaeudolorbibendumconsequatineutortor.Integerornaresuscipitnuncvelullamcorper.Vestibulumdapibusnisldapibusscelerisqueconvallis.Nullamfeugiatliberononjustoornare,atvenenatislectusmollis.Maecenasefficitureniminurnaconguesodales.Nullamporttitoruterosasagittis.Fuscenonorcivulputate,vulputatenequeiaculis,vestibulumodio.Donecscelerisque,tellussitametpulvinarpretium,erattelluscursusvelit,utsemperduieratveljusto.Inaterosatarcuaccumsanaliquetsitametuturna.Donectellusante,mollissedantetincidunt,sempervehiculaest.Utcondimentum,nisieuvestibulumullamcorper,enimtortormollisfelis,avulputateenimdiamvitaetortor.Vivamuseumiacligulacondimentumaliquet.Utegethendreritarcu.Vestibulumindolorpellentesque,tinciduntmagnaat,bibendumdolor.Insagittis,justoetfringilladapibus,nislurnalaciniaorci,quismalesuadaliberolectusindui.Aliquamvehiculaliberoinplaceratsemper.Etiamrhoncus,duietelementumcursus,tellusnibhpellentesquenunc,intristiquenibhsapienneclectus.Donecpulvinaraliquamconvallis.Orcivariusnatoquepenatibusetmagnisdisparturientmontes,nasceturridiculusmus.Namexdui,consequatidfacilisissitamet,temporeutellus.Inhachabitasseplateadictumst.Donecveleleifendfelis.Inconsecteturblanditmalesuada.Suspendisseegetsagittisurna.Vestibulumsollicitudinaccumsanligula,nonbibendumdiamcommodoquis.Sedegetinterdumnisi,sitametvolutpatleo.Quisqueidporttitorsem.Proinidlacusnectortorvolutpatultriciesutideros.Etiamaliquetnisiutnequeblanditdapibus.Sedfaucibusmollisluctus.Innibhmassa,condimentumvitaenisiquis,venenatisfaucibusjusto.Duisfaucibusexodio,necultricieseroslaciniaquis.Etiamafermentumtellus.Quisquemalesuadafelissedsapienporttitorluctus.Aliquameratvolutpat.Morbiporttitornislidexgravidaeuismod.Maecenaspharetraerosnondiamtinciduntaliquamateudolor.Utiaculisvehiculanisi,idiaculisarculuctusvitae.Aliquameratvolutpat.Namidtortoreuarcuportaaccumsanconvallisvelelit.Proinenimarcu,sagittisnecenimin,viverraiaculisdiam.Quisquemaximusconsequateuismod.Ututantequisturpisfaucibuselementumnonneclacus.Sedidelitarcu.Morbinullaligula,blanditaeleifendvel,volutpatnonquam.Quisqueelementumornarenulla,condimentumcommodoleovulputatesitamet.Du"
+
+check "echo '                    '"
+e_opt_check "echo -n inspiration"
+e_opt_check "echo -n -n -n troubadour"
+check "echo eezaz azeaze"
+check "echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+#checking echo with variables
+check "echo \$@"
+check "echo jdsq | cat -e; echo \$?"
+check "echo \$*"
+check "echo \$"
+check "echo \$#"
+check "echo \$IFS"
+check "cd ../src; ls -a; vase=\$OLDPWD; echo \$vase"
+check "cd src; cd dlmskqdqs; echo \$OLDPWD"
+check "val=42; echo \$val"
+check "val=42; echo \${val}"
+
+
+check "test2=pro;test3=ject; echo \$test2\$test3"
+e_opt_check "test4=ec;test5=ho; \$test4\$test5 -e 'Testing concatenate vars'"
+check "variant1=delta; variant2=omicron; variant3=zeta; variant4=zoulou; echo \"\$variant1 \$variant2 \$variant3 \$variant4\""
+check "variant1=delta; variant2=omicron; variant3=zeta; variant4=zoulou;echo \"My variants : \$variant1 \$variant2 \$variant3 \$variant4\""
+check "variant1=delta; variant2=omicron; variant3=zeta; variant4=zoulou;echo \"\$variant1\$variant2 \$variant3\$variant4\""
+check "variant1=delta; variant2=omicron;variant3=\$variant1; variant4=\$variant1\$variant2; echo \$variant3 \$variant4"
+
+printf "\n"
+printf "${CYAN}########## LS #############${NC}\n"
+printf "\n"
+
+check "ls"
+check "ls -a"
+check "ls -b"
+check "ls fazd ls"
+check "if echo papa; then echo fi; else echo b; fi; echo ls"
+
+printf "\n"
+printf "${CYAN}########## CD #############${NC}\n"
+printf "\n"
+
+check "cd ezzaaezzae"
+check "cd /tmp"
+check "cd /home"
+check "cd ../src/lol"
+check "cd ../molotov"
+check "cd -"
+check "cd ."
+check "cd .."
+
+printf "\n"
+printf "${CYAN}########## EXIT #############${NC}\n"
+printf "\n"
+
+check "exit 5"
+check "exit"
+check "exit zze"
+
+printf "\n"
+printf "${CYAN}########## IF_CMD #############${NC}\n"
+printf "\n"
+
+printf "\n"
+printf "${CYAN}########## GOOD_IF_CMD #############${NC}\n"
+printf "\n"
+
+check "if echdo ok; then echo; elif exa;then xa;fi"
+
+check "if echdo ok; then echo; elif exa;then xa;else dzadaz;fi"
+
+check "if true; then echo ok; else echo yes;fi"
+
+check "if false; then echo ok;else echo yes;fi"
+
+check "if ls; then acsdz;else echo yes;fi"
+
+check "if echo papa; then echo fifi; else echo loulou; fi"
+
+check "if echo if; then echo then; elif echo tot; then echo dude; else echo last; ls; fi"
+
+check "if echi lops 2>/dev/null; then echo zebi; elif echo lk | echo lkds | cat -e; then echo pipe success; fi"
+
+check "if if echo papa; then echo first; fi; then echo second; else echo end;fi"
+
+check "if echo lus; then echo e | cat -e; fi"
+
+check "if echo lus || echi ls; then echo e | cat -e; fi"
+
+check "if echo lus && echi zeub; then echo e | cat -e; fi"
+
+check "if echo a || echi ls; then echo zeubi && echo pouloulou; fi"
+check "if echo a && echi ls; then echo zeubi && echo pouloulou; else echo papa && echo mom; fi"
+check "if echo a && echi ls; then echo zeubi && echo pouloulou; else echo papa && echo mom; fi"
+
+
+check "var1=job; if echo \$var1; then echo polo; else var1=nope; echo \"job has become \$var1\" ;fi"
+check "var1=job; if echi \$var1 2> /dev/null ; then echo polo; else var1=nope; echo \"job has become \$var1\" ;fi"
+check "tab1=ec; tab2=ho; if \$tab1\$tab2 dude 2>/dev/null; then echo \"Var has been changed \"; tab2=nope;fi; echo \"success\""
+check "var2=ec; var3=ho; if \$var2\$var2 dude 2>/dev/null; then echo \"Var has been changed \"; var2=nope;fi; echo \"success\"; fi"
+
+
+printf "\n"
+printf "${CYAN}########## BAD_IF_CMD #############${NC}\n"
+printf "\n"
+
+check "if echo papa; then echo fifi"
+check "if echo papa; echo loupita; fi;"
+check "if echi dude; then echi polew; elif toto; then malloc; else jdhd; fi"
+check "if echo lus; then echo e | cat -e;"
+check "if echo lost then; echo looop; fi"
+check "if noif; then echo polo; else echo doesntwork; fi"
+check "fi if noif; fi"
+check "if if echo papa; echo first; fi; echo second; else echo end;fi"
+check "if if echo papa; echo first; fi; echo second; else echo end;else echo joub; fi"
+check "if if echo papa; echo first; fi;then echo second; else echo end;fi"
+check "if echo dude; echo pewpew; elif echo lol; echo junp; fi"
+check "if ; fi"
+check "if ; then echo fallout; fi"
+check "if echo dude; echo lil;fi"
+check "if echo tets; then echo lise; break;echo break; fi"
+check "if echo tets; then echo lise; continue;echo break; fi; continue;break;"
+check "if (if (! echo a); then ((echo fist | cat -e) || (echo kjdsq | echo jsute | echo jsdslf)) ;fi ); then echo poulou; fi"
+check "if (if (echo a); then ((echo fist | cat -e) && ((echo zeubi | cat -e) && echo jsute && echo jsdslf)) ;fi ); then (echo poulou && echo zeubi); fi"
+check "if (if (echo a); then ((echo fist | cat -e) && (echo kjdsq && echo jsute && echo jsdslf)) ;fi ); then (echo poulou && echo zeubi) && (if (echo a); then ((echo fist | cat -e) && (echo kjdsq && echo jsute && echo jsdslf)) ;fi ); fi"
+
+
+printf "\n"
+printf "${CYAN}########## TESTING_NEGATION #############${NC}\n"
+printf "\n"
+
+check "! echo a"
+
+check "! (echo dsqhd | cat -e)"
+
+check "if ( ! echo jmup); then echo b; elif (echo slice); then (echo par function) || (echo filidd);fi" 
+
+check "if ( ! echo jmup); then echo b; elif (echo slice); then (echo par function) | (echo filidd);fi" 
+
+check "if ( ! echo jmup); then echo b; elif (echo slice); then ( echi par function 2>/dev/null) && (echo filidd);fi" 
+
+check "if ( ! echo fdsgfdsb); then echo fdsqgbf; elif (echo slice); then ( ! echi par function 2>/dev/null) && (echo filidd);fi" 
+
+check "if ( ! echo fdsgfdsb); then echo fdsqgbf; elif (echo slice); then ( ! echi par function 2>/dev/null) && (echo filidd);fi" 
+
+check "if ( ! echo fdsgfdsb); then echo fdsqgbf; elif (echo slice); then ( ! echi par function 2>/dev/null) && (echo filidd) && (echo boss | cat -e) && (echo jgfdqsg | echo lds | echo kdsd);fi"
+
+
+printf "\n"
+printf "${CYAN}########## TESTING_PIPE #############${NC}\n"
+printf "\n"
+
+check "echo a > salut < echo numpy"
+
+printf "\n"
+printf "${CYAN}########## BAD_PIPE #############${NC}\n"
+printf "\n"
+
+check "echo a | echo b| "
+
+printf "\n"
+printf "${CYAN}########## TESTING_LOOPS #############${NC}\n"
+printf "\n"
+
+check "seq "
+check "seq 1"
+check "seq 1 5"
+
+
+printf "\n"
+printf "${CYAN}########## TESTING_FOR_LOOPS #############${NC}\n"
+printf "\n"
+
+check "for i in 1 2 3 4 5;do echo \$i;done "
+
+
+
+printf "\n"
+printf "${CYAN}########## TESTING MULTIPLE COMMANDS #############${NC}\n"
+printf "\n"
+
+check "echo papa ; echo and ; if echo p ; then echo end ; else echo e ; fi"
+
+check "if if echo papa ; then echo end > lol ; else echo papa > f ; fi > if1 > condition1 ; then echo lol > papa > pa ; elif if echi oaoa ; then echi zeb; else echo end ; fi ; then echo maman ; fi ;"
+
+
+#check "until if if echo papa ; then echo end > lol ; else echo papa > f ; fi > if1 > condition1 ; then echo lol > papa > pa ; elif if echi oaoa ; then echi zeb; else echo end ; fi ; then echo maman ; fi ; do if if echo papa ; then echo end > lol ; else echo papa > f ; fi > if1 > condition1 ; then echo lol > papa > pa ; elif if echi oaoa ; then echi zeb; else echo end ; fi ; then echo maman ; fi ;  done > pp"
+
+
+check "echo a || cat -e && until if if echo papa ; then echo end > lol ; else echo papa > f ; fi > if1 > condition1 ; then echo lol > papa > pa ; elif if echi oaoa ; then echi zeb; else echo end ; fi ; then echo maman ; fi ; do if if echo papa ; then echo end > lol ; else echo papa > f ; fi > if1 > condition1 ; then echo lol > papa > pa ; elif if echi oaoa ; then echi zeb; else echo end ; fi ; then echo maman ; fi ;  done > pp"
+
+check "echo fi if then else while do done ;"
+
+check "tree"
+
+check "echi a || echi b || echi jfklds || echo success "
+
+check "echo a && echo b && echo jfklds && echo success "
+
+check "echo a || echo b"
+
+e_opt_check "echo -e \"hello\n\" && echo else"
+e_opt_check "echo -en \"hello\n\" || echo else"
+e_opt_check "echo -en \"hello\n\" || echo else"
+e_opt_check "(echo -e \"hello\n\" || echo pipe) && (echo lisa | cat -e)"
+e_opt_check "(echo -e \"hello\n\" || echo pipe) | (echo lisa | cat -e)"
+e_opt_check "(echo -e \"hello\n\" || echo pipe) || (echo lisa | cat -e)"
+e_opt_check "(echo -e \"hello\n\" && echo pipe) || (echo lisa | cat -e)"
+e_opt_check "(echo -e \"hello\n\" || echo pipe) || (echo lisa | cat -e) && (echo down && ls)"
+e_opt_check "(echo -e \"hello\n\" || echo pipe) || (echo lisa | cat -e) && (echo down && ls)"
+
+
+check "ls -a || echo b"
+
+check "ls -a && echo b; ls -a || echo b; echo popoa && (echo dude | cat -e)"
+
+check "echo a| echo b | echo c"
+
+check "echo azaze | cat -e"
+
+check "fi if then else while do done"
+
+check "ry(){ echo a ; }; ry"
+
+value=bracket
+check "ry(){ echo a ; }; ry"
+
+check "ry(){ echo a ; ls -a; }; ry"
+
+check "ry(){ echo a || echo b; }; ry"
+
+check "ry(){ if echo a ;then echo ifif; else echo lum; fi }; ry"
+
+check "ry(){ echo okfdsf | cat -e ; }; ry"
+
+check "ry ( { echo a ; }; ry"
+
+check "ry ){ echo a ; }; ry"
+
+check "ry { echo a ; }; ry"
+
+check " (){ echo a ; }; ()"
+
+check " { echo a ; }; "
+
+
+check "echo ok \"    s  \"; "
+
+check "if ezaez;then eazzae;fi"
+
+check "if zaeazzae;then azezae;else zeazae;fi"
+
+printf "\n"
+printf "${CYAN}########## VERY_LONG_CMD AND BAD_CMD #############${NC}\n"
+printf "\n"
+
+check "dasjkdghas"
+check "clkjkalsdc; echo dude"
+check "clkjkalsdc echo dude"
+
+check "echi a || echi b  echi jfklds || echo success "
+
+check "echi a || echi b  echi jfklds || echo success "
+
+check "echi a || "
+
+check "echi b && echo else && "
+
+check "echo b && echo else && "
+
+check "echo \"hello\\n\" && echo else &&"
+
+check "val1=6;val2=18; seq \$val2 \$val1"
+
+
+printf "\n"
+printf "${CYAN}################# RECAPITULATIF ##################${NC}\n"
+printf "\n"
+
+#echo -e "Sur $VAL TESTS ${CYAN} ${ORANGE}Vous avez réussi${GREEN} $HITS ${ORANGE}TESTS et ratés ${RED}$ERRORS ${ORANGE}TESTS ${NC}\n "
+echo -e "TOTAL : $(( $VAL + $eVAL )) , Passed tests : ${GREEN} $(( $HITS + $eHITS )) ${NC}, Failed : ${RED}$(( $ERRORS + $eERRORS )) ${NC} \n"
+
+#rm ../builddir/2
+#rm ../builddir/a
+rm ../builddir/condition1
+rm ../builddir/if1
+rm ../builddir/lol
+rm ../builddir/pa
+rm ../builddir/papa
+rm ../builddir/pp
+rm ../builddir/ref
+rm ../builddir/student
+#rm ../builddir/t
